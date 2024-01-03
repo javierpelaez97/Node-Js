@@ -4,13 +4,13 @@ const router = express.Router(); //Es una función de express
 
 const {
   buscarTodos,
-  busacarPorId,
+  buscarPorId,
   crearUsuario,
   login
 } = require("../controllers/usuario.controller");
 
 
-const{middlewareCrearUsuario, middlewareEmailValido, estaLogeado, esAdmin}= require("../middleware/usuario.middleware")
+const{middlewareCrearUsuario, middlewareEmailValido, estaLogeado, esAdmin, esEmailDuplicado}= require("../middleware/usuario.middleware")
 //PARA CONSULTAR TODOS LOS USUARIOS
 
 router.get("/", async (req, res) => {
@@ -47,14 +47,15 @@ router.get("/:id", async (req, res) => {
 
 //PARA CREAR UN USUARIO
 
-router.post("/", middlewareCrearUsuario, middlewareEmailValido, async (req, res) => {   //Debemos seguir un orden dentro de los middleware según la restricción
+router.post("/", middlewareCrearUsuario, middlewareEmailValido, esEmailDuplicado ,async (req, res) => {   //Debemos seguir un orden dentro de los middleware según la restricción
   //.valido es el resultado que nos da la funcion creada en validadores
   try {
-    await crearUsuario(req.body.email.trim(), req.body.password);         // Al ser la lnea mas critica debemos meterla en el try catch
+    await crearUsuario(req.body.email.trim(), req.body.password,req.body.rol);         // Al ser la lnea mas critica debemos meterla en el try catch
+    res.json({ msg: "usuario creado" });
   } catch (error) {
     res.status(500).json({ msg: "Error interno en el servidor" });
   }
-  res.json({ msg: "usuario creado" });
+  
 });
 
 router.post("/login",async (req,res)=>{

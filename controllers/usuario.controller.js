@@ -1,6 +1,7 @@
 const Usuarios = require("../models/usuario.model");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv").config();
+const {encrptar, comprobar} = require('../helpers/encriptacion')
 
 async function buscarTodos() {
   const usuarios = await Usuarios.find();
@@ -8,19 +9,24 @@ async function buscarTodos() {
 }
 
 async function buscarTodosPorMail(mail){
-  const usuarios = await Usuario.find({email: mail})
+  const usuarios = await Usuarios.find({email: mail})
   return usuarios
 }
-
-async function busacarPorId(id) {
+async function buscarUnoPorMail(mail){
+  const usurioEncontrado = await Usuarios.findOne({email: mail})
+  return usurioEncontrado
+}
+async function buscarPorId(id) {
   const usuarioEncontrado = Usuarios.findById(id);
   return usuarioEncontrado;
 }
 
-async function crearUsuario(email, pwd) {
+async function crearUsuario(email, pwd, rol) {
+  const hash = await encrptar(pwd)
   const nuevoUsuario = new Usuarios({
     email: email,
-    password: pwd,
+    password: hash,
+    rol:rol, 
   });
   await nuevoUsuario.save();
   return nuevoUsuario;
@@ -28,8 +34,9 @@ async function crearUsuario(email, pwd) {
 async function login(mail, pwd) {
   const usuarioEncontrado = await Usuarios.findOne({ email: mail }); //Buscamos el email
   if (usuarioEncontrado) {
+    const resultadoComprobacion = await comprobar(usuarioEncontrado.password, pwd)
     //Si el email esta bien debemos saber si la password también
-    if (usuarioEncontrado.password === pwd) {
+    if (resultadoComprobacion) {
       const token = jwt.sign(             //La funcion sign es para añadir un token de inicio de sesión con sus parametros
         {
           id: usuarioEncontrado._id,
@@ -61,8 +68,9 @@ async function login(mail, pwd) {
 }
 module.exports = {
   buscarTodos,
-  busacarPorId,
+  buscarPorId,
   crearUsuario,
   login,
-  buscarTodosPorMail
+  buscarTodosPorMail,
+  buscarUnoPorMail
 };
